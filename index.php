@@ -5,19 +5,34 @@ try {
   $pdo -> setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
   $pdo -> setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-  $statement = $pdo->prepare("SELECT `name`,`id` FROM `category` WHERE `type` = 0");
+  $statement = $pdo->prepare("SELECT `name`,`id` FROM `category` WHERE `nesting_type` = 0");
 
-  $statement->execute() ? $product_type0 = $statement->fetchAll(PDO::FETCH_ASSOC) : die('Something went wrong');
+  $statement->execute() ? $categoryNestingType0 = $statement->fetchAll(PDO::FETCH_ASSOC) : die('Something went wrong');
 
-  $productType0Ids = array();
-
-  foreach($product_type0 as $element) {
-    array_push($productType0Ids, $element['id'])
+  $categoryNestingType0Ids = array();
+  // print_r($categoryNestingType0);
+  foreach($categoryNestingType0 as $category) {
+    array_push($categoryNestingType0Ids, $category['id']);
   }
-  
-  // $statement = $pdo->prepare("SELECT `name`,`id` FROM `category` WHERE `type` = 1 AND `parent_id` IN () ");
-  // print_r($product_type0);
-  
+  // print_r($categoryNestingType0Ids);
+  // хотел написать функцию для того чтобы не повторять код на 22 и 32
+  function getNestedData ($arrayForSearch) {
+    
+  }
+  $placeholders = implode(',', array_fill(0, count($categoryNestingType0Ids), '?'));
+  $statement = $pdo->prepare("SELECT * FROM `category` WHERE `nesting_type` = 1 AND `parent_id` IN ($placeholders) ");
+  $statement->execute($categoryNestingType0Ids) ? $categoryNestingType1 = $statement->fetchAll(PDO::FETCH_ASSOC) : die('Something went worng');
+
+  // print_r($categoryNestingType1);
+  $categoryNestingType1Ids = array();
+  foreach($categoryNestingType1 as $category) {
+    array_push($categoryNestingType1Ids, $category['id']);
+  }
+
+  $placeholders = implode(',', array_fill(0, count($categoryNestingType1Ids), '?'));
+  $statement = $pdo->prepare("SELECT * FROM `category` WHERE `nesting_type` = 1 AND `parent_id` IN ($placeholders) ");
+  $statement->execute($categoryNestingType1Ids) ? $categoryNestingType1 = $statement->fetchAll(PDO::FETCH_ASSOC) : die('Something went worng');
+  print_r($categoryNestingType1);
 } catch (PDOException $e) {
   echo 'Failed to connect to the database: ' . $e->getMessage();
 }

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: May 18, 2023 at 08:20 AM
+-- Generation Time: May 25, 2023 at 04:37 AM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -29,9 +29,23 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `category` (
   `id` int UNSIGNED NOT NULL,
-  `sub-category` varchar(255) NOT NULL,
-  `sub-sub-category` text NOT NULL
+  `parent_id` int UNSIGNED DEFAULT NULL,
+  `nesting_type` smallint UNSIGNED NOT NULL,
+  `product_type` smallint UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `category`
+--
+
+INSERT INTO `category` (`id`, `parent_id`, `nesting_type`, `product_type`, `name`) VALUES
+(1, NULL, 0, 0, 'Smartfonlar'),
+(2, NULL, 0, 0, 'Apple'),
+(3, 2, 1, 0, 'iphone 14 pro'),
+(4, 2, 1, 0, 'iphone 11'),
+(5, 3, 1, 0, 'white'),
+(6, 3, 1, 0, 'black');
 
 --
 -- Indexes for dumped tables
@@ -51,7 +65,7 @@ ALTER TABLE `category`
 -- AUTO_INCREMENT for table `category`
 --
 ALTER TABLE `category`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
