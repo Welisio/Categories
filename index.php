@@ -5,34 +5,45 @@ try {
   $pdo -> setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
   $pdo -> setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-  $statement = $pdo->prepare("SELECT `name`,`id` FROM `category` WHERE `nesting_type` = 0");
+  $statement = $pdo->prepare("SELECT * FROM `category` WHERE `nesting_type` = 0");
 
   $statement->execute() ? $categoryNestingType0 = $statement->fetchAll(PDO::FETCH_ASSOC) : die('Something went wrong');
 
   $categoryNestingType0Ids = array();
-  // print_r($categoryNestingType0);
+
   foreach($categoryNestingType0 as $category) {
     array_push($categoryNestingType0Ids, $category['id']);
   }
-  // print_r($categoryNestingType0Ids);
-  // хотел написать функцию для того чтобы не повторять код на 22 и 32
-  function getNestedData ($arrayForSearch) {
+
+  $infiniteNestedArrays = array();
+
+  function getNestedData ($pdo, $categoryNestingTypeIds) {
+    global $infiniteNestedArrays;
+    $placeholders = implode(',', array_fill(0, count($categoryNestingTypeIds), '?'));
     
-  }
-  $placeholders = implode(',', array_fill(0, count($categoryNestingType0Ids), '?'));
-  $statement = $pdo->prepare("SELECT * FROM `category` WHERE `nesting_type` = 1 AND `parent_id` IN ($placeholders) ");
-  $statement->execute($categoryNestingType0Ids) ? $categoryNestingType1 = $statement->fetchAll(PDO::FETCH_ASSOC) : die('Something went worng');
+    $statement = $pdo->prepare("SELECT * FROM `category` WHERE `nesting_type` = 1 AND `parent_id` IN ($placeholders) ");
+    if ($statement->execute($categoryNestingTypeIds)) {
+      $categoryNestingType = $statement->fetchAll(PDO::FETCH_ASSOC);
+      print_r($categoryNestingType);
+      echo '<br>';
+      // В конце проверка execute срабатывает плохо, в результате $categoryNestingType возвращает пустой массив 
+      array_push($infiniteNestedArrays, $categoryNestingType);
 
-  // print_r($categoryNestingType1);
-  $categoryNestingType1Ids = array();
-  foreach($categoryNestingType1 as $category) {
-    array_push($categoryNestingType1Ids, $category['id']);
+      $categoryNestingTypeIds = array();
+    
+      foreach($categoryNestingType as $category) {
+        array_push($categoryNestingTypeIds, $category['id']);
+      }
+
+      getNestedData($pdo, $categoryNestingTypeIds);
+    } else {
+      return;
+    }
   }
 
-  $placeholders = implode(',', array_fill(0, count($categoryNestingType1Ids), '?'));
-  $statement = $pdo->prepare("SELECT * FROM `category` WHERE `nesting_type` = 1 AND `parent_id` IN ($placeholders) ");
-  $statement->execute($categoryNestingType1Ids) ? $categoryNestingType1 = $statement->fetchAll(PDO::FETCH_ASSOC) : die('Something went worng');
-  print_r($categoryNestingType1);
+  getNestedData($pdo, $categoryNestingType0Ids);
+
+  print_r($infiniteNestedArrays);
 } catch (PDOException $e) {
   echo 'Failed to connect to the database: ' . $e->getMessage();
 }
@@ -69,24 +80,26 @@ try {
       </div>
     </div>
     <div class="categories-tree">
+      <?php foreach($categoryNestingType0 as $nestingType0Elem) { ?>
       <div class="category-block">
-        <div class="main-category">Smartfonlar</div>
+        <div class="main-category"><?= $nestingType0Elem['name'] ?></div>
         <div class="sub-categories">
-        </div>
-      </div>
-      <div class="category-block">
-        <div class="sub-category">Apple</div>
-        <div class="sub-categories">
-          <div class="sub-sub-category">
-            iphone 14 pro Max
-            <div class="sub-sub-category" style="margin-left: 15px">Red</div>
+          <?php 
+          foreach($categoryNestingType1 as $nestingType1Elem) { 
+            
+            if ($nestingType1Elem['parent_id'] === $nestingType0Elem['id']) {
+              if (in_array($nestingType1Elem['id'], $categoryNestingType1)) {
+                echo array_count_values(array_column($categoryNestingType1, 'parent_id'))[$nestingType1Elem['id']];
+              }
+          ?>
+          <div style="margin-left: 15px;" class="sub-sub-category"><?= $nestingType1Elem['name']; ?>
+              
           </div>
-          <div class="sub-sub-category">iphone 14 pro Max</div>
-          <div class="sub-sub-category">iphone 14 pro Max</div>
-          <div class="sub-sub-category">iphone 14 pro Max</div>
-          <div class="sub-sub-category">iphone 14 pro Max</div>
+          <?php } ?>
+          <?php } ?>
         </div>
       </div>
+      <?php } ?>
     </div>
   </div>
 </body>
