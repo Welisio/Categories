@@ -17,16 +17,20 @@ try {
 
   $infiniteNestedArrays = array();
 
+
+  $infiniteNestedArrays[] = $categoryNestingType0;
+
   function getNestedData ($pdo, $categoryNestingTypeIds) {
     global $infiniteNestedArrays;
     $placeholders = implode(',', array_fill(0, count($categoryNestingTypeIds), '?'));
     
     $statement = $pdo->prepare("SELECT * FROM `category` WHERE `nesting_type` = 1 AND `parent_id` IN ($placeholders) ");
-    if ($statement->execute($categoryNestingTypeIds)) {
-      $categoryNestingType = $statement->fetchAll(PDO::FETCH_ASSOC);
-      print_r($categoryNestingType);
-      echo '<br>';
-      // В конце проверка execute срабатывает плохо, в результате $categoryNestingType возвращает пустой массив 
+    
+    $statement->execute($categoryNestingTypeIds);
+
+    $categoryNestingType = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+    if (count($categoryNestingType)) {
       array_push($infiniteNestedArrays, $categoryNestingType);
 
       $categoryNestingTypeIds = array();
@@ -40,14 +44,30 @@ try {
       return;
     }
   }
-
+  
   getNestedData($pdo, $categoryNestingType0Ids);
-
+  $infiniteNestedArrays = array_merge(...$infiniteNestedArrays);
   print_r($infiniteNestedArrays);
+  function categoriesRecursiveRendering ($infiniteNestedArrays) {
+    foreach($infiniteNestedArrays as $item) {
+      if ($item['nesting_type'] ===  0) {
+        echo '
+        <div class="category-block">
+          <div class="main-category">'.$item['name'].'</div>  
+          <div class="sub-categories">
+            <div style="margin-left: 15px;" class="sub-sub-category">Test2</div>
+          </div>
+        </div>
+        ';
+      }
+    }
+    
+  }
+  $template = '';
+  echo $template;
 } catch (PDOException $e) {
   echo 'Failed to connect to the database: ' . $e->getMessage();
 }
-
 
 ?>
 
@@ -80,26 +100,7 @@ try {
       </div>
     </div>
     <div class="categories-tree">
-      <?php foreach($categoryNestingType0 as $nestingType0Elem) { ?>
-      <div class="category-block">
-        <div class="main-category"><?= $nestingType0Elem['name'] ?></div>
-        <div class="sub-categories">
-          <?php 
-          foreach($categoryNestingType1 as $nestingType1Elem) { 
-            
-            if ($nestingType1Elem['parent_id'] === $nestingType0Elem['id']) {
-              if (in_array($nestingType1Elem['id'], $categoryNestingType1)) {
-                echo array_count_values(array_column($categoryNestingType1, 'parent_id'))[$nestingType1Elem['id']];
-              }
-          ?>
-          <div style="margin-left: 15px;" class="sub-sub-category"><?= $nestingType1Elem['name']; ?>
-              
-          </div>
-          <?php } ?>
-          <?php } ?>
-        </div>
-      </div>
-      <?php } ?>
+      <?php categoriesRecursiveRendering($infiniteNestedArrays) ?>  
     </div>
   </div>
 </body>
