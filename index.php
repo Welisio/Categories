@@ -48,17 +48,13 @@ try {
   getNestedData($pdo, $categoryNestingType0Ids);
   $infiniteNestedArrays = array_merge(...$infiniteNestedArrays);
   print_r($infiniteNestedArrays);
-  function categoriesRecursiveRendering ($infiniteNestedArrays) {
+  function rendering ($infiniteNestedArrays) {
     foreach($infiniteNestedArrays as $item) {
       if ($item['nesting_type'] ===  0) {
-        echo '
-        <div class="category-block">
-          <div class="main-category">'.$item['name'].'</div>  
-          <div class="sub-categories">
-            <div style="margin-left: 15px;" class="sub-sub-category">Test2</div>
-          </div>
-        </div>
-        ';
+        $childsKeys = array_keys($infiniteNestedArrays, 'parrent');
+        echo '<div class="main-category">'.$item['name'].'</div>';
+      } else {
+        echo '<div style="margin-left: 15px;" class="sub-sub-category">'.$item['name'].'</div>';
       }
     }
     
