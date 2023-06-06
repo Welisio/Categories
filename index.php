@@ -47,20 +47,25 @@ try {
   
   getNestedData($pdo, $categoryNestingType0Ids);
   $infiniteNestedArrays = array_merge(...$infiniteNestedArrays);
-  print_r($infiniteNestedArrays);
-  function rendering ($infiniteNestedArrays) {
-    foreach($infiniteNestedArrays as $item) {
-      if ($item['nesting_type'] ===  0) {
-        $childsKeys = array_keys($infiniteNestedArrays, 'parrent');
-        echo '<div class="main-category">'.$item['name'].'</div>';
-      } else {
-        echo '<div style="margin-left: 15px;" class="sub-sub-category">'.$item['name'].'</div>';
-      }
-    }
-    
+
+  foreach ($infiniteNestedArrays as $item) {
+    print_r($item);
+    echo '<br>';
   }
-  $template = '';
-  echo $template;
+  function inArray ($value, $array) {
+    for ($i = 0; $i < count($array); $i++) {
+      if ($array[$i]['parent_id'] === $value) return true;
+    }
+  }
+  function subCategoryRender ($infiniteNestedArrays, $value) {
+    for($index = 0; $index < count($infiniteNestedArrays); $index++) { 
+      // $subCategories = [];
+      // $template = '';
+      if ($infiniteNestedArrays[$index]['parent_id'] === $value['id']) {
+        echo '<div style="margin-left: 15px;" class="sub-sub-category">'.$infiniteNestedArrays[$index]['name'].'</div>';
+      }     
+    }
+  }  
 } catch (PDOException $e) {
   echo 'Failed to connect to the database: ' . $e->getMessage();
 }
@@ -96,7 +101,27 @@ try {
       </div>
     </div>
     <div class="categories-tree">
-      <?php categoriesRecursiveRendering($infiniteNestedArrays) ?>  
+      <?php foreach($infiniteNestedArrays as $mainCategory) {
+        // print_r($mainCategory);
+        // echo '<br>';        
+        if ($mainCategory['nesting_type'] === 0) {  
+        // echo '123';
+      ?>
+      
+      <div class="category-block">
+          <div class="main-category"><?= $mainCategory['name'] ?></div>  
+          <div class="sub-categories">
+            <?php if (inArray($mainCategory['id'], $infiniteNestedArrays)) { 
+            subCategoryRender($infiniteNestedArrays, $mainCategory);  
+            ?>
+        
+            <?php } ?>
+          </div>  
+      </div>
+      <?php
+            } 
+        } 
+      ?>
     </div>
   </div>
 </body>
