@@ -5,20 +5,7 @@ try {
   $pdo -> setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
   $pdo -> setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-  $statement = $pdo->prepare("SELECT * FROM `category` WHERE `nesting_type` = 0");
-
-  $statement->execute() ? $categoryNestingType0 = $statement->fetchAll(PDO::FETCH_ASSOC) : die('Something went wrong');
-
-  $categoryNestingType0Ids = array();
-
-  foreach($categoryNestingType0 as $category) {
-    array_push($categoryNestingType0Ids, $category['id']);
-  }
-
   $infiniteNestedArrays = array();
-
-
-  $infiniteNestedArrays[] = $categoryNestingType0;
 
   function getNestedData ($pdo, $categoryNestingTypeIds) {
     global $infiniteNestedArrays;
@@ -45,31 +32,62 @@ try {
     }
   }
   
-  getNestedData($pdo, $categoryNestingType0Ids);
-  $infiniteNestedArrays = array_merge(...$infiniteNestedArrays);
+  function getCategories ($productType) {
+    global $pdo, $infiniteNestedArrays;
+
+    $statement = $pdo->prepare("SELECT * FROM `category` WHERE `nesting_type` = ? AND `product_type` = ?");
+
+    $statement->execute([0, $productType]) ? $categoryNestingType0 = $statement->fetchAll(PDO::FETCH_ASSOC) : die('Something went wrong');
+
+    if (count($categoryNestingType0) === 0) return [];
+  
+    $categoryNestingType0Ids = array();
+  
+    foreach($categoryNestingType0 as $category) {
+      array_push($categoryNestingType0Ids, $category['id']);
+    }
+  
+    $infiniteNestedArrays[] = $categoryNestingType0;
+
+    getNestedData($pdo, $categoryNestingType0Ids);
+
+    $infiniteNestedArrays = array_merge(...$infiniteNestedArrays);
+
+    $infiniteNestedArraysLink = [...$infiniteNestedArrays];
+
+    $infiniteNestedArrays = [];
+
+    return $infiniteNestedArraysLink;
+  }
+
+  $smartPhoneCategories = getCategories(0);
+
+  $smartGadjets = getCategories(1);
+
+  $computers = getCategories(2);
 
   foreach ($infiniteNestedArrays as $item) {
-    print_r($item);
     echo '<br>';
   }
+
   function inArray ($value, $array) {
     for ($i = 0; $i < count($array); $i++) {
       if ($array[$i]['parent_id'] === $value) return true;
     }
   }
-  function subCategoryRender ($infiniteNestedArrays, $value) {
-    for($index = 0; $index < count($infiniteNestedArrays); $index++) { 
-      // $subCategories = [];
-      // $template = '';
-      if ($infiniteNestedArrays[$index]['parent_id'] === $value['id']) {
-        echo '<div style="margin-left: 15px;" class="sub-sub-category">'.$infiniteNestedArrays[$index]['name'].'</div>';
-      }     
+  function subCategoryRender ($infiniteNestedArrays, $category, $depth) {
+    if (inArray($category['id'], $infiniteNestedArrays)) { 
+      for($index = 0; $index < count($infiniteNestedArrays); $index++) { 
+        if ($infiniteNestedArrays[$index]['parent_id'] === $category['id']) {
+          echo '<div style="margin-left: '.$depth.'px;" class="sub-sub-category">'.$infiniteNestedArrays[$index]['name'].'</div>';
+          subCategoryRender($infiniteNestedArrays, $infiniteNestedArrays[$index], $depth + 15);
+        }
+      }
     }
-  }  
+  }
 } catch (PDOException $e) {
   echo 'Failed to connect to the database: ' . $e->getMessage();
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -85,49 +103,80 @@ try {
   <div class="space"></div>
   <div class="category-body">
     <div class="categories-wrapper">
-      <div class="head-category">
-        <img style="width:22px;max-height:30px" src="https://kontakt.az/wp-content/uploads/2022/10/Telefon.png">
-        <div>Smartfonlar</div> 
+      <div class="head-category" onmouseover="showCategories(0)">
+        <div class="img-container">
+          <img style="width:22px;max-height:30px;" src="https://kontakt.az/wp-content/uploads/2022/10/Telefon.png">
+        </div>
+        <div class="img-name">
+          <div class="name">Smartfonlar</div>
+          <div class="head-delimiter"></div>       
+        </div>
       </div>
-      <div class="head-delimiter"></div>
       <div class="head-category">
-        <img style="width:22px;max-height:30px" src="https://kontakt.az/wp-content/uploads/2022/10/Saat.png">
-        <div>Smart qadjetlər</div>
+        <div class="img-container">
+          <img style="width:22px;max-height:30px" src="https://kontakt.az/wp-content/uploads/2022/10/Saat.png">
+        </div>
+        <div class="img-name">
+          <div class="name">Smart qadjetlər</div>       
+          <div class="head-delimiter"></div>   
+        </div>
       </div>
-      <div class="head-delimiter"></div>
       <div class="head-category">
-        <img style="width:22px;max-height:30px" src="https://kontakt.az/wp-content/uploads/2022/10/Komputer.png">
-        <div>Notbuklar, PK, planşetlər</div>
+        <div class="img-container">
+          <img style="width:22px;max-height:30px" src="https://kontakt.az/wp-content/uploads/2022/10/Komputer.png">
+        </div>
+        <div class="img-name">
+          <div class="name">Notbuklar, PK, planşetlər</div>
+          <div class="head-delimiter"></div>
+        </div>
       </div>
     </div>
-    <div class="categories-tree">
-      <?php foreach($infiniteNestedArrays as $mainCategory) {
-        // print_r($mainCategory);
-        // echo '<br>';        
+    <div style="display: none;" class="categories-tree">
+      <?php foreach($smartPhoneCategories as $mainCategory) {   
         if ($mainCategory['nesting_type'] === 0) {  
-        // echo '123';
       ?>
-      
       <div class="category-block">
           <div class="main-category"><?= $mainCategory['name'] ?></div>  
           <div class="sub-categories">
-            <?php if (inArray($mainCategory['id'], $infiniteNestedArrays)) { 
-            subCategoryRender($infiniteNestedArrays, $mainCategory);  
-            ?>
-        
-            <?php } ?>
+            <?php subCategoryRender($smartPhoneCategories, $mainCategory, 15);?>
           </div>  
       </div>
       <?php
-            } 
+          } 
+        } 
+      ?>
+    </div>
+    <div style="display: block;" class="categories-tree">
+      <?php foreach($smartGadjets as $mainCategory) {   
+        if ($mainCategory['nesting_type'] === 0) {  
+      ?>
+      <div class="category-block">
+          <div class="main-category"><?= $mainCategory['name'] ?></div>  
+          <div class="sub-categories">
+            <?php subCategoryRender($smartGadjets, $mainCategory, 15);?>
+          </div>  
+      </div>
+      <?php
+          } 
+        } 
+      ?>
+    </div>
+    <div style="display: none;" class="categories-tree">
+      <?php foreach($infiniteNestedArrays as $mainCategory) {   
+        if ($mainCategory['nesting_type'] === 0) {  
+      ?>
+      <div class="category-block">
+          <div class="main-category"><?= $mainCategory['name'] ?></div>  
+          <div class="sub-categories">
+            <?php subCategoryRender($infiniteNestedArrays, $mainCategory, 15);?>
+          </div>  
+      </div>
+      <?php
+          } 
         } 
       ?>
     </div>
   </div>
+  <script src="main.js"></script>
 </body>
 </html>
-
-SQL Strings<br>
-product-category = '0'<br>
-sub-category = 'Apple'<br>
-sub-sub-category = 'iphone 14 pro|iphone 14 pro Max'<br>
