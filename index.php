@@ -7,58 +7,21 @@ try {
   $pdo -> setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
   $infiniteNestedArrays = array();
-
-  function getNestedData ($pdo, $categoryNestingTypeIds) {
-    global $infiniteNestedArrays;
-    $placeholders = implode(',', array_fill(0, count($categoryNestingTypeIds), '?'));
-    
-    $statement = $pdo->prepare("SELECT * FROM `category` WHERE `nesting_type` = 1 AND `parent_id` IN ($placeholders) ");
-    
-    $statement->execute($categoryNestingTypeIds);
-
-    $categoryNestingType = $statement->fetchAll(PDO::FETCH_ASSOC);
-
-    if (count($categoryNestingType)) {
-      array_push($infiniteNestedArrays, $categoryNestingType);
-
-      $categoryNestingTypeIds = array();
-    
-      foreach($categoryNestingType as $category) {
-        array_push($categoryNestingTypeIds, $category['id']);
-      }
-
-      getNestedData($pdo, $categoryNestingTypeIds);
-    } else {
-      return;
-    }
-  }
   
   function getCategories ($productType) {
-    global $pdo, $infiniteNestedArrays;
+    global $pdo;
 
-    $statement = $pdo->prepare("SELECT * FROM `category` WHERE `nesting_type` = ? AND `product_type` = ?");
+    $statement = $pdo->prepare("SELECT * FROM `category` WHERE `product_type` = ?");
 
-    $statement->execute([0, $productType]) ? $categoryNestingType0 = $statement->fetchAll(PDO::FETCH_ASSOC) : die('Something went wrong');
+    $statement->execute([$productType]) ? $categories = $statement->fetchAll(PDO::FETCH_ASSOC) : die('Something went wrong');
 
-    if (count($categoryNestingType0) === 0) return [];
-  
-    $categoryNestingType0Ids = array();
-  
-    foreach($categoryNestingType0 as $category) {
-      array_push($categoryNestingType0Ids, $category['id']);
-    }
-  
-    $infiniteNestedArrays[] = $categoryNestingType0;
+    if (count($categories) === 0) return [];
 
-    getNestedData($pdo, $categoryNestingType0Ids);
+    $categoriesLink = [...$categories];
 
-    $infiniteNestedArrays = array_merge(...$infiniteNestedArrays);
+    $categories = [];
 
-    $infiniteNestedArraysLink = [...$infiniteNestedArrays];
-
-    $infiniteNestedArrays = [];
-
-    return $infiniteNestedArraysLink;
+    return $categoriesLink;
   }
 
   $smartPhoneCategories = getCategories(0);
@@ -71,21 +34,35 @@ try {
     echo '<br>';
   }
 
-  function inArray ($value, $array) {
-    for ($i = 0; $i < count($array); $i++) {
-      if ($array[$i]['parent_id'] === $value) return true;
+  // function subCategoryRender ($categories, $category, $depth) {
+  //   if (inArray($category['id'], $categories)) {
+  //     for($index = 0; $index < count($categories); $index++) { 
+  //       if ($categories[$index]['parent_id'] === $category['id']) {
+  //         echo '<div style="margin-left: '.$depth.'px;" class="sub-sub-category">'.$categories[$index]['name'].'</div>';
+  //         subCategoryRender($categories, $categories[$index], $depth + 15);
+  //       }
+  //     }
+  //   }
+  // }
+
+  function inArray ($categoryId, $categories) {
+    for ($index = 0; $index < count($categories); $index++) {
+      if ($categories[$index]['parent_id'] === $categoryId) return true;
     }
   }
-  function subCategoryRender ($infiniteNestedArrays, $category, $depth) {
-    if (inArray($category['id'], $infiniteNestedArrays)) { 
-      for($index = 0; $index < count($infiniteNestedArrays); $index++) { 
-        if ($infiniteNestedArrays[$index]['parent_id'] === $category['id']) {
-          echo '<div style="margin-left: '.$depth.'px;" class="sub-sub-category">'.$infiniteNestedArrays[$index]['name'].'</div>';
-          subCategoryRender($infiniteNestedArrays, $infiniteNestedArrays[$index], $depth + 15);
-        }
-      }
+
+  function categoryRender ($categories, $depth) {
+    for ($index = 0; $index < count($categories); $index++) {
+      echo '<div style="margin-left: '.$depth.'px" class="category">'.$categories[$index]['name'].'</div>';
+      if (inArray($categories[$index]['id'], $categories)) {
+        categoryRender($categories, $depth + 15);
+      }      
     }
   }
+
+  print_r($smartPhoneCategories);
+
+  die();
 } catch (PDOException $e) {
   echo 'Failed to connect to the database: ' . $e->getMessage();
 }
@@ -133,20 +110,11 @@ try {
       </div>
     </div>
     <div style="display: block;" class="categories-tree">
-      <?php foreach($smartPhoneCategories as $mainCategory) {   
-        if ($mainCategory['nesting_type'] === 0) {  
-      ?>
-      <div class="category-block">
-          <div class="main-category"><?= $mainCategory['name'] ?></div>  
-          <div class="sub-categories">
-            <?php subCategoryRender($smartPhoneCategories, $mainCategory, 15);?>
-          </div>  
-      </div>
-      <?php
-          } 
-        } 
-      ?>
+        <div class="categories">
+          <?php categoryRender($smartPhoneCategories, 0) ?>
+        </div>
     </div>
+    <?php die(); ?>
     <div style="display: none;" class="categories-tree">
       <?php foreach($smartGadjets as $mainCategory) {   
         if ($mainCategory['nesting_type'] === 0) {  
