@@ -1,4 +1,5 @@
 <?php
+// Надо создать вторую таблицу,где буду храниться данные о товарах и привязать их к категориям
 try {
   $dsn = "mysql:host=localhost;dbname=categorydb;charset=utf8mb4";
   $pdo = new PDO($dsn,'root','');
