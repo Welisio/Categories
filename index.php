@@ -131,7 +131,7 @@ try {
         </div>
       </div>
     </div>
-    <div style="display: none;" class="categories-tree">
+    <div style="display: block;" class="categories-tree">
       <?php foreach($smartPhoneCategories as $mainCategory) {   
         if ($mainCategory['nesting_type'] === 0) {  
       ?>
@@ -146,7 +146,7 @@ try {
         } 
       ?>
     </div>
-    <div style="display: block;" class="categories-tree">
+    <div style="display: none;" class="categories-tree">
       <?php foreach($smartGadjets as $mainCategory) {   
         if ($mainCategory['nesting_type'] === 0) {  
       ?>
